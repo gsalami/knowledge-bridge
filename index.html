@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Knowledge Bridge</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f17;
+      --bg2: #13161f;
+      --bg3: #1a1d2a;
+      --bg4: #1f2335;
+      --border: #252840;
+      --border2: #2e3250;
+      --text: #e2e8f0;
+      --text2: #7986a8;
+      --text3: #4a5578;
+      --accent: #7c5cfc;
+      --accent2: #4fa3ff;
+      --accent-glow: rgba(124,92,252,0.2);
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== LOGIN ===== */
+    #login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .login-box {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 40px 32px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+    }
+    .login-logo {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    .login-box h1 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .login-box p { color: var(--text2); font-size: 13px; margin-bottom: 28px; }
+    .login-box input {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 15px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .login-box input:focus { border-color: var(--accent); }
+    .login-box button {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: var(--radius-sm);
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .login-error { color: var(--red); font-size: 13px; margin-top: 10px; }
+
+    /* ===== APP ===== */
+    #app { display: none; flex-direction: column; min-height: 100vh; }
+
+    /* ===== HEADER ===== */
+    .header {
+      background: rgba(13,15,23,0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      gap: 12px;
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .logo {
+      font-size: 16px;
+      font-weight: 700;
+      white-space: nowrap;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header-stats {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .header-stats::-webkit-scrollbar { display: none; }
+    .stat-pill {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .stat-pill:hover { opacity: 0.8; }
+    .stat-pill.backlog { background: rgba(124,92,252,0.12); color: var(--accent); border: 1px solid rgba(124,92,252,0.25); }
+    .stat-pill.working { background: rgba(245,158,11,0.12); color: var(--yellow); border: 1px solid rgba(245,158,11,0.25); }
+    .stat-pill.done { background: rgba(34,197,94,0.12); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+    .stat-pill.ignored { background: rgba(74,85,120,0.12); color: var(--text3); border: 1px solid rgba(74,85,120,0.25); }
+
+    .header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .btn-icon {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border2);
+      background: var(--bg3);
+      color: var(--text2);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .btn-icon:hover { border-color: var(--accent); color: var(--text); }
+    .btn-primary {
+      height: 36px;
+      padding: 0 14px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      white-space: nowrap;
+    }
+    .btn-primary:hover { opacity: 0.9; }
+
+    /* ===== TABS (mobile view) ===== */
+    .tab-bar {
+      display: none;
+      padding: 8px 16px;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .tab-bar::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border2);
+      background: none;
+      color: var(--text2);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .tab-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+    /* ===== KANBAN ===== */
+    .kanban {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      padding: 16px;
+      flex: 1;
+      align-items: start;
+    }
+
+    .column {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .column-header {
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .column-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--text2);
+    }
+    .col-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .col-backlog .col-dot { background: var(--accent); }
+    .col-working .col-dot { background: var(--yellow); }
+    .col-done .col-dot { background: var(--green); }
+    .col-ignored .col-dot { background: var(--text3); }
+    .col-count {
+      background: var(--bg4);
+      border-radius: 20px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text2);
+    }
+    .cards { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 80px; }
+
+    /* ===== CARD ===== */
+    .card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(124,92,252,0.1);
+    }
+    .card-top { display: flex; align-items: flex-start; gap: 7px; margin-bottom: 7px; }
+    .card-id { color: var(--text3); font-size: 10px; flex-shrink: 0; margin-top: 3px; font-weight: 600; }
+    .card-title { font-size: 13px; font-weight: 600; line-height: 1.4; }
+    .card-summary { font-size: 12px; color: var(--text2); line-height: 1.5; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .card-meta { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 5px; }
+    .card-cat {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: rgba(124,92,252,0.12);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .card-date { font-size: 10px; color: var(--text3); }
+    .rel-dots { display: flex; gap: 2px; }
+    .rel-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border2); }
+    .rel-dot.on { background: var(--accent2); }
+
+    /* ===== DRAWER (Entry Detail) ===== */
+    .drawer-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 100;
+    }
+    .drawer-overlay.open { display: block; }
+
+    .drawer {
+      position: fixed;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: min(580px, 100vw);
+      background: var(--bg2);
+      border-left: 1px solid var(--border2);
+      display: flex;
+      flex-direction: column;
+      z-index: 101;
+      transform: translateX(100%);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .drawer-overlay.open .drawer { transform: translateX(0); }
+
+    .drawer-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .drawer-header-content { flex: 1; min-width: 0; }
+    .drawer-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+    .drawer-id { font-size: 11px; color: var(--text3); font-weight: 600; }
+    .drawer-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    .drawer-title { font-size: 17px; font-weight: 700; line-height: 1.4; }
+    .drawer-close {
+      width: 32px; height: 32px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border2);
+      background: var(--bg3);
+      color: var(--text2);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .drawer-close:hover { color: var(--text); border-color: var(--accent); }
+
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .drawer-body::-webkit-scrollbar { width: 4px; }
+    .drawer-body::-webkit-scrollbar-track { background: transparent; }
+    .drawer-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text3);
+      margin-bottom: 8px;
+    }
+
+    .summary-block {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text);
+      background: var(--bg3);
+      border-left: 3px solid var(--accent);
+      padding: 12px 16px;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }
+
+    .rel-block {
+      background: var(--bg3);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .rel-score { font-size: 22px; font-weight: 700; color: var(--accent2); flex-shrink: 0; }
+    .rel-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+    .report-body { font-size: 13px; line-height: 1.8; color: var(--text); }
+    .report-body h2 { font-size: 15px; margin: 18px 0 6px; color: var(--accent2); }
+    .report-body h3 { font-size: 13px; margin: 14px 0 5px; color: var(--text2); }
+    .report-body ul { padding-left: 18px; margin: 6px 0; }
+    .report-body li { margin: 3px 0; }
+    .report-body p { margin: 6px 0; }
+    .report-body a { color: var(--accent2); }
+    .report-body strong { color: var(--text); }
+
+    .sources-list { display: flex; flex-direction: column; gap: 6px; }
+    .source-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--accent2);
+      text-decoration: none;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .source-link:hover { border-color: var(--accent2); }
+    .source-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ===== IMAGE SEARCH ===== */
+    .img-search-row {
+      display: flex;
+      gap: 8px;
+    }
+    .img-search-row input {
+      flex: 1;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+    }
+    .img-search-row input:focus { border-color: var(--accent); }
+    .btn-search-img {
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border2);
+      background: var(--bg3);
+      color: var(--accent2);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .btn-search-img:hover { border-color: var(--accent2); background: rgba(79,163,255,0.08); }
+    .btn-search-img:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .img-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 10px;
+    }
+    @media (max-width: 480px) {
+      .img-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .img-item {
+      aspect-ratio: 4/3;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+      background: var(--bg4);
+      position: relative;
+    }
+    .img-item:hover { border-color: var(--accent2); transform: scale(1.03); }
+    .img-item.selected { border-color: var(--accent) !important; }
+    .img-item.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 4px; right: 4px;
+      background: var(--accent);
+      color: white;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .img-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .selected-preview {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(124,92,252,0.08);
+      border: 1px solid rgba(124,92,252,0.25);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 8px;
+    }
+    .selected-preview img { width: 48px; height: 32px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+    .selected-preview-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--accent); font-weight: 600; font-size: 11px; }
+    .selected-preview-remove { cursor: pointer; color: var(--text3); font-size: 16px; margin-left: auto; flex-shrink: 0; }
+    .selected-preview-remove:hover { color: var(--red); }
+
+    /* ===== GAMMA SECTION ===== */
+    .gamma-box {
+      background: var(--bg3);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .gamma-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .gamma-select {
+      flex: 1;
+      min-width: 140px;
+      padding: 8px 10px;
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+    .gamma-select:focus { border-color: var(--accent); }
+    .btn-gamma {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.15s;
+    }
+    .btn-gamma:hover { opacity: 0.9; }
+    .btn-gamma:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-add-pres {
+      width: 32px; height: 32px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border2);
+      background: var(--bg2);
+      color: var(--text2);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .btn-add-pres:hover { border-color: var(--accent); color: var(--text); }
+    .gamma-status {
+      font-size: 12px;
+      color: var(--accent2);
+      padding: 8px 10px;
+      background: rgba(79,163,255,0.08);
+      border-radius: var(--radius-sm);
+      display: none;
+    }
+    .gamma-status.success { background: rgba(34,197,94,0.08); color: var(--green); }
+    .gamma-status.error { background: rgba(239,68,68,0.08); color: var(--red); }
+
+    /* ===== DRAWER FOOTER ===== */
+    .drawer-footer {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+      flex-shrink: 0;
+      background: var(--bg2);
+    }
+    .status-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+    .chip {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      background: none;
+      transition: all 0.15s;
+    }
+    .chip.backlog { border-color: var(--accent); color: var(--accent); }
+    .chip.backlog:hover, .chip.backlog.active { background: var(--accent); color: white; }
+    .chip.working { border-color: var(--yellow); color: var(--yellow); }
+    .chip.working:hover, .chip.working.active { background: var(--yellow); color: white; }
+    .chip.done { border-color: var(--green); color: var(--green); }
+    .chip.done:hover, .chip.done.active { background: var(--green); color: white; }
+    .chip.ignored { border-color: var(--text3); color: var(--text3); }
+    .chip.ignored:hover, .chip.ignored.active { background: var(--text3); color: white; }
+
+    .footer-actions { display: flex; gap: 5px; margin-left: auto; }
+    .btn-ghost {
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border2);
+      background: none;
+      color: var(--text2);
+      font-size: 12px;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 4px;
+      transition: all 0.15s;
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+
+    /* ===== ADD MODAL ===== */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 200;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0;
+    }
+    .overlay.open { display: flex; }
+    @media (min-width: 600px) {
+      .overlay { align-items: center; padding: 24px; }
+    }
+
+    .modal-sheet {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    @media (min-width: 600px) {
+      .modal-sheet {
+        border-radius: 16px;
+        max-width: 520px;
+        max-height: 85vh;
+      }
+    }
+    .modal-handle {
+      width: 36px; height: 4px;
+      background: var(--border2);
+      border-radius: 2px;
+      margin: 12px auto 0;
+      flex-shrink: 0;
+    }
+    @media (min-width: 600px) { .modal-handle { display: none; } }
+
+    .modal-header-bar {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .modal-header-bar h2 { font-size: 16px; font-weight: 700; }
+    .modal-body-scroll {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    .form-textarea { min-height: 90px; resize: vertical; }
+    .form-input:focus, .form-textarea:focus { border-color: var(--accent); }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .btn-cancel {
+      padding: 9px 18px;
+      background: none;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      color: var(--text2);
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .btn-submit {
+      padding: 9px 20px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: var(--radius-sm);
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .spinner {
+      display: inline-block;
+      width: 13px; height: 13px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .merge-warn {
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.3);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--yellow);
+      margin-bottom: 14px;
+    }
+    .merge-item {
+      padding: 9px 12px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 12px;
+      margin-bottom: 6px;
+      transition: border-color 0.15s;
+    }
+    .merge-item:hover { border-color: var(--accent); }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: var(--bg4);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 999;
+      opacity: 0;
+      transition: all 0.2s;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .kanban { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .kanban {
+        grid-template-columns: 1fr;
+        padding: 10px;
+        gap: 10px;
+      }
+      .tab-bar { display: flex; }
+      .column { display: none; }
+      .column.tab-active { display: block; }
+      .header-stats { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🌉</div>
+    <h1>Knowledge Bridge</h1>
+    <p>Dein monatliches KI-Update Board</p>
+    <input type="password" id="pw-input" placeholder="Passwort" autocomplete="current-password" />
+    <button onclick="doLogin()">Einloggen</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">🌉 KB</div>
+      <div class="header-stats">
+        <span class="stat-pill backlog" id="stat-backlog">0</span>
+        <span class="stat-pill working" id="stat-working">0</span>
+        <span class="stat-pill done" id="stat-done">0</span>
+        <span class="stat-pill ignored" id="stat-ignored">0</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-icon" onclick="loadEntries()" title="Neu laden">↻</button>
+      <button class="btn-primary" onclick="openAddModal()">＋ Neu</button>
+    </div>
+  </div>
+
+  <!-- Mobile tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('backlog', this)">Backlog</button>
+    <button class="tab-btn" onclick="switchTab('working', this)">Working</button>
+    <button class="tab-btn" onclick="switchTab('done', this)">Done</button>
+    <button class="tab-btn" onclick="switchTab('ignored', this)">Ignored</button>
+  </div>
+
+  <div class="kanban">
+    <div class="column col-backlog tab-active" id="col-wrap-backlog">
+      <div class="column-header">
+        <div class="column-title"><span class="col-dot"></span> Backlog</div>
+        <span class="col-count" id="count-backlog">0</span>
+      </div>
+      <div class="cards" id="col-backlog"></div>
+    </div>
+    <div class="column col-working" id="col-wrap-working">
+      <div class="column-header">
+        <div class="column-title"><span class="col-dot"></span> Working On</div>
+        <span class="col-count" id="count-working">0</span>
+      </div>
+      <div class="cards" id="col-working"></div>
+    </div>
+    <div class="column col-done" id="col-wrap-done">
+      <div class="column-header">
+        <div class="column-title"><span class="col-dot"></span> Done</div>
+        <span class="col-count" id="count-done">0</span>
+      </div>
+      <div class="cards" id="col-done"></div>
+    </div>
+    <div class="column col-ignored" id="col-wrap-ignored">
+      <div class="column-header">
+        <div class="column-title"><span class="col-dot"></span> Ignored</div>
+        <span class="col-count" id="count-ignored">0</span>
+      </div>
+      <div class="cards" id="col-ignored"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ENTRY DRAWER -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="handleOverlayClick(event)">
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <div class="drawer-header-content">
+        <div class="drawer-meta">
+          <span class="drawer-id" id="d-id"></span>
+          <span class="drawer-badge" id="d-badge"></span>
+          <span class="drawer-id" id="d-date"></span>
+        </div>
+        <div class="drawer-title" id="d-title"></div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+
+    <div class="drawer-body" id="drawer-body">
+      <!-- Summary -->
+      <div>
+        <div class="section-label">Zusammenfassung</div>
+        <div class="summary-block" id="d-summary"></div>
+      </div>
+
+      <!-- Relevance -->
+      <div id="d-rel-section">
+        <div class="section-label">Relevanz</div>
+        <div class="rel-block">
+          <div class="rel-score" id="d-rel-score"></div>
+          <div class="rel-text" id="d-rel-text"></div>
+        </div>
+      </div>
+
+      <!-- Report -->
+      <div>
+        <div class="section-label">Vollständiger Bericht</div>
+        <div class="report-body" id="d-report"></div>
+      </div>
+
+      <!-- Sources -->
+      <div id="d-sources-section">
+        <div class="section-label">Quellen</div>
+        <div class="sources-list" id="d-sources"></div>
+      </div>
+
+      <!-- Image Search -->
+      <div>
+        <div class="section-label">Bilder</div>
+        <div class="img-search-row">
+          <input id="img-query" placeholder="Suchbegriff..." />
+          <button class="btn-search-img" id="btn-img-search" onclick="searchImages()">🔍 Suchen</button>
+        </div>
+        <div id="img-grid" class="img-grid"></div>
+        <div id="selected-preview" class="selected-preview" style="display:none;"></div>
+      </div>
+
+      <!-- Gamma -->
+      <div>
+        <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Gamma Slide</span>
+          <span id="d-gamma-link" style="display:none;font-size:12px;"></span>
+        </div>
+        <div class="gamma-box">
+          <div class="gamma-row">
+            <select class="gamma-select" id="gamma-select">
+              <option value="">Präsentation wählen...</option>
+            </select>
+            <button class="btn-add-pres" onclick="openNewPresModal()" title="Neue Präsentation">＋</button>
+            <button class="btn-gamma" id="btn-gen" onclick="generateSlide()">⚡ Generieren</button>
+          </div>
+          <div class="gamma-status" id="gamma-status"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <div class="status-chips">
+        <button class="chip backlog" onclick="setStatus('backlog')">Backlog</button>
+        <button class="chip working" onclick="setStatus('working on')">Working</button>
+        <button class="chip done" onclick="setStatus('done')">Done</button>
+        <button class="chip ignored" onclick="setStatus('ignored')">Ignored</button>
+      </div>
+      <div class="footer-actions">
+        <button class="btn-ghost" onclick="copyReport()">📋</button>
+        <button class="btn-ghost" onclick="copyDeeplink()">🔗</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="overlay" id="add-overlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header-bar">
+      <h2>Neuer KB-Eintrag</h2>
+      <button class="drawer-close" onclick="closeAddModal()">✕</button>
+    </div>
+    <div class="modal-body-scroll">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:18px;">Link oder Text eingeben — Perplexity recherchiert den Rest.</p>
+      <div class="form-group">
+        <label class="form-label">Link (optional)</label>
+        <input class="form-input" id="add-url" type="url" placeholder="https://..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Topic / Text</label>
+        <textarea class="form-textarea" id="add-text" placeholder="Was soll recherchiert werden?"></textarea>
+      </div>
+      <div id="add-merge-wrap" style="display:none;">
+        <div class="merge-warn">⚠️ Ähnliche Einträge gefunden — mergen oder neu erstellen?</div>
+        <div id="add-merge-list"></div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn-cancel" style="font-size:12px;padding:7px 14px;" onclick="submitEntry(true)">Neu erstellen</button>
+          <button class="btn-submit" id="btn-merge-ok" style="display:none;font-size:12px;padding:7px 14px;" onclick="confirmMerge()">Mergen</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions" id="add-actions">
+      <button class="btn-cancel" onclick="closeAddModal()">Abbrechen</button>
+      <button class="btn-submit" id="add-submit-btn" onclick="submitEntry()">Recherche starten</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW PRESENTATION MODAL -->
+<div class="overlay" id="pres-overlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header-bar">
+      <h2>Präsentation hinzufügen</h2>
+      <button class="drawer-close" onclick="closeNewPresModal()">✕</button>
+    </div>
+    <div class="modal-body-scroll">
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input class="form-input" id="pres-name" type="text" placeholder="z.B. Knowledge Bridge März 26" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gamma URL (optional)</label>
+        <input class="form-input" id="pres-url" type="url" placeholder="https://gamma.app/docs/..." />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeNewPresModal()">Abbrechen</button>
+      <button class="btn-submit" onclick="createPresentation()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/kb/api';
+let currentEntryId = null;
+let allEntries = [];
+let selectedImageUrl = null;
+let currentImages = [];
+let presentations = [];
+let _mergeTargetId = null;
+
+// ===== AUTH =====
+function doLogin() {
+  const pw = document.getElementById('pw-input').value;
+  fetch(`${API}/auth`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({password: pw})
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      localStorage.setItem('kb_auth', pw);
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      loadEntries();
+      loadPresentations();
+      checkDeeplink();
+    } else {
+      document.getElementById('login-error').textContent = 'Falsches Passwort';
+    }
+  });
+}
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+if (localStorage.getItem('kb_auth')) doLogin();
+
+// ===== ENTRIES =====
+function loadEntries() {
+  fetch(`${API}/entries`).then(r => r.json()).then(entries => {
+    allEntries = entries;
+    renderBoard(entries);
+  });
+}
+
+function renderBoard(entries) {
+  const cols = {'backlog': [], 'working on': [], 'done': [], 'ignored': []};
+  entries.forEach(e => (cols[e.status] || cols.backlog).push(e));
+  renderCol('backlog', cols['backlog']);
+  renderCol('working', cols['working on']);
+  renderCol('done', cols['done']);
+  renderCol('ignored', cols['ignored']);
+  document.getElementById('stat-backlog').textContent = cols['backlog'].length + ' Backlog';
+  document.getElementById('stat-working').textContent = cols['working on'].length + ' Working';
+  document.getElementById('stat-done').textContent = cols['done'].length + ' Done';
+  document.getElementById('stat-ignored').textContent = cols['ignored'].length + ' Ignored';
+  ['backlog','working','done','ignored'].forEach((k, i) => {
+    const keys = ['backlog','working on','done','ignored'];
+    document.getElementById('count-'+k).textContent = cols[keys[i]].length;
+  });
+}
+
+function renderCol(key, entries) {
+  const el = document.getElementById('col-'+key);
+  el.innerHTML = '';
+  entries.forEach(e => el.appendChild(createCard(e)));
+}
+
+function createCard(e) {
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.id = `id-${e.id}`;
+  const date = new Date(e.created_at).toLocaleDateString('de-CH', {day:'2-digit',month:'2-digit',year:'2-digit'});
+  const dots = Array.from({length:5}, (_,i) => `<span class="rel-dot ${i < e.relevance_score ? 'on' : ''}"></span>`).join('');
+  div.innerHTML = `
+    <div class="card-top">
+      <span class="card-id">#${e.id}</span>
+      <div class="card-title">${esc(e.title)}</div>
+    </div>
+    <div class="card-summary">${esc(e.summary)}</div>
+    <div class="card-meta">
+      <span class="card-cat">${esc(e.category)}</span>
+      <span class="card-date">${date}</span>
+      <div class="rel-dots">${dots}</div>
+    </div>`;
+  div.addEventListener('click', () => openEntry(e.id));
+  return div;
+}
+
+// ===== MOBILE TABS =====
+function switchTab(key, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['backlog','working','done','ignored'].forEach(k => {
+    const col = document.getElementById('col-wrap-'+k);
+    if (col) col.classList.toggle('tab-active', k === key);
+  });
+}
+
+// ===== DRAWER =====
+function openEntry(id) {
+  const e = allEntries.find(x => x.id === id);
+  if (!e) return;
+  currentEntryId = id;
+  selectedImageUrl = e.selected_image || null;
+  currentImages = [];
+
+  document.getElementById('d-id').textContent = `#${e.id}`;
+  document.getElementById('d-title').textContent = e.title;
+  document.getElementById('d-summary').textContent = e.summary;
+  const date = new Date(e.created_at).toLocaleDateString('de-CH', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('d-date').textContent = date;
+
+  const badge = document.getElementById('d-badge');
+  badge.textContent = e.status.charAt(0).toUpperCase() + e.status.slice(1);
+  badge.style.background = statusBg(e.status);
+  badge.style.color = statusColor(e.status);
+
+  document.querySelectorAll('.chip').forEach(c => {
+    const s = c.classList.contains('working') ? 'working on' : Array.from(c.classList).find(x => ['backlog','done','ignored'].includes(x));
+    c.classList.toggle('active', s === e.status);
+  });
+
+  document.getElementById('d-rel-score').textContent = `${e.relevance_score}/5`;
+  document.getElementById('d-rel-text').textContent = e.relevance;
+
+  const reportEl = document.getElementById('d-report');
+  try { reportEl.innerHTML = marked.parse(e.full_report || ''); } catch(_) { reportEl.textContent = e.full_report || ''; }
+
+  let sources = [];
+  try { sources = JSON.parse(e.sources || '[]'); } catch(_) {}
+  const srcSec = document.getElementById('d-sources-section');
+  const srcEl = document.getElementById('d-sources');
+  if (sources.length) {
+    srcSec.style.display = '';
+    srcEl.innerHTML = sources.map(u => `<a href="${esc(u)}" target="_blank" class="source-link"><span>🔗</span><span>${esc(u)}</span></a>`).join('');
+  } else { srcSec.style.display = 'none'; }
+
+  // Images
+  let imgs = [];
+  try { imgs = JSON.parse(e.images || '[]'); } catch(_) {}
+  currentImages = imgs;
+  document.getElementById('img-query').value = e.title || '';
+  renderImages(imgs);
+
+  // Gamma
+  document.getElementById('gamma-status').style.display = 'none';
+  document.getElementById('gamma-status').className = 'gamma-status';
+  const gl = document.getElementById('d-gamma-link');
+  if (e.gamma_url) {
+    gl.style.display = '';
+    gl.innerHTML = `<a href="${esc(e.gamma_url)}" target="_blank" style="color:var(--accent2);">🔗 Gamma öffnen</a>`;
+  } else { gl.style.display = 'none'; }
+
+  window.location.hash = `id-${id}`;
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('drawer-body').scrollTop = 0;
+}
+
+function closeDrawer() {
+  document.getElementById('drawer-overlay').classList.remove('open');
+  currentEntryId = null;
+  window.location.hash = '';
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('drawer-overlay')) closeDrawer();
+}
+
+function setStatus(status) {
+  if (!currentEntryId) return;
+  fetch(`${API}/entries/${currentEntryId}/status`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({status})
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      showToast('Status: ' + status);
+      const e = allEntries.find(x => x.id === currentEntryId);
+      if (e) e.status = status;
+      loadEntries();
+      const badge = document.getElementById('d-badge');
+      badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+      badge.style.background = statusBg(status);
+      badge.style.color = statusColor(status);
+      document.querySelectorAll('.chip').forEach(c => {
+        const s = c.classList.contains('working') ? 'working on' : Array.from(c.classList).find(x => ['backlog','done','ignored'].includes(x));
+        c.classList.toggle('active', s === status);
+      });
+    }
+  });
+}
+
+function copyReport() {
+  const e = allEntries.find(x => x.id === currentEntryId);
+  if (!e) return;
+  let src = [];
+  try { src = JSON.parse(e.sources || '[]'); } catch(_) {}
+  const text = `# ${e.title}\n\n${e.summary}\n\n${e.full_report}\n\nQuellen:\n${src.map(s=>'- '+s).join('\n')}`;
+  navigator.clipboard.writeText(text).then(() => showToast('Kopiert!'));
+}
+
+function copyDeeplink() {
+  const url = `${location.origin}/kb/#id-${currentEntryId}`;
+  navigator.clipboard.writeText(url).then(() => showToast('Deeplink kopiert! 🔗'));
+}
+
+function checkDeeplink() {
+  const hash = location.hash;
+  if (hash && hash.startsWith('#id-')) {
+    const id = parseInt(hash.replace('#id-',''));
+    if (!isNaN(id)) setTimeout(() => {
+      const e = allEntries.find(x => x.id === id);
+      if (e) openEntry(id);
+    }, 300);
+  }
+}
+
+// ===== IMAGES =====
+function proxyImg(url) {
+  if (!url) return '';
+  return `/kb/api/image-proxy?url=${encodeURIComponent(url)}`;
+}
+
+function searchImages() {
+  if (!currentEntryId) return;
+  const btn = document.getElementById('btn-img-search');
+  const query = document.getElementById('img-query').value.trim();
+  btn.disabled = true;
+  btn.textContent = '⏳';
+  fetch(`${API}/entries/${currentEntryId}/find-images`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({query: query || undefined})
+  }).then(r => r.json()).then(d => {
+    btn.disabled = false;
+    btn.textContent = '🔍 Suchen';
+    if (d.images) {
+      currentImages = d.images;
+      renderImages(d.images);
+      showToast(d.images.length + ' Bilder gefunden');
+    } else showToast('Fehler: ' + (d.error || '?'));
+  }).catch(e => {
+    btn.disabled = false;
+    btn.textContent = '🔍 Suchen';
+    showToast('Fehler: ' + e.message);
+  });
+}
+
+document.getElementById('img-query').addEventListener('keydown', e => { if (e.key === 'Enter') searchImages(); });
+
+function renderImages(images) {
+  const grid = document.getElementById('img-grid');
+  if (!images || !images.length) { grid.innerHTML = ''; updatePreview(); return; }
+  grid.innerHTML = images.map((img) => {
+    const url = typeof img === 'string' ? img : (img.url || '');
+    const thumb = typeof img === 'object' && img.thumbnail ? img.thumbnail : url;
+    const title = typeof img === 'object' && img.title ? img.title : '';
+    const sel = selectedImageUrl === url;
+    return `<div class="img-item ${sel ? 'selected' : ''}" 
+      onclick="selectImage('${url.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}', this)"
+      title="${esc(title)}">
+      <img src="${proxyImg(thumb)}" alt="${esc(title)}" loading="lazy"
+           onerror="this.parentElement.style.opacity='0.3'" />
+    </div>`;
+  }).join('');
+  updatePreview();
+}
+
+function selectImage(url, el) {
+  selectedImageUrl = url;
+  document.querySelectorAll('.img-item').forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+  fetch(`${API}/entries/${currentEntryId}/select-image`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({image_url: url})
+  });
+  updatePreview();
+  showToast('Bild ausgewählt ✓');
+}
+
+function clearSelectedImage() {
+  selectedImageUrl = null;
+  document.querySelectorAll('.img-item').forEach(i => i.classList.remove('selected'));
+  if (currentEntryId) fetch(`${API}/entries/${currentEntryId}/select-image`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({image_url: null})
+  });
+  updatePreview();
+}
+
+function updatePreview() {
+  const el = document.getElementById('selected-preview');
+  if (selectedImageUrl) {
+    el.style.display = 'flex';
+    el.innerHTML = `
+      <img src="${proxyImg(selectedImageUrl)}" onerror="this.style.display='none'" />
+      <span class="selected-preview-text">Bild ausgewählt für Slide</span>
+      <span class="selected-preview-remove" onclick="clearSelectedImage()">✕</span>`;
+  } else { el.style.display = 'none'; }
+}
+
+// ===== PRESENTATIONS =====
+function loadPresentations() {
+  fetch(`${API}/presentations`).then(r => r.json()).then(data => {
+    presentations = data;
+    const sel = document.getElementById('gamma-select');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Präsentation wählen...</option>' +
+      data.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+    if (cur) sel.value = cur;
+  });
+}
+
+function openNewPresModal() {
+  document.getElementById('pres-overlay').classList.add('open');
+  document.getElementById('pres-name').value = '';
+  document.getElementById('pres-url').value = '';
+  setTimeout(() => document.getElementById('pres-name').focus(), 150);
+}
+
+function closeNewPresModal() {
+  document.getElementById('pres-overlay').classList.remove('open');
+}
+
+function createPresentation() {
+  const name = document.getElementById('pres-name').value.trim();
+  const gamma_url = document.getElementById('pres-url').value.trim();
+  if (!name) { showToast('Name eingeben'); return; }
+  fetch(`${API}/presentations`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({name, gamma_url})
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      closeNewPresModal();
+      loadPresentations();
+      setTimeout(() => document.getElementById('gamma-select').value = d.id, 300);
+      showToast(`«${name}» gespeichert`);
+    }
+  });
+}
+
+// ===== GAMMA ===== 
+function generateSlide() {
+  if (!currentEntryId) return;
+  const btn = document.getElementById('btn-gen');
+  const statusEl = document.getElementById('gamma-status');
+  const presId = document.getElementById('gamma-select').value;
+  const presMeta = presentations.find(p => p.id == presId);
+  const presName = presMeta ? presMeta.name : '';
+
+  btn.disabled = true;
+  btn.textContent = '⏳';
+  statusEl.style.display = '';
+  statusEl.className = 'gamma-status';
+  statusEl.textContent = '⚙️ Gamma generiert... (30-60s)';
+
+  fetch(`${API}/entries/${currentEntryId}/generate-slide`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({selected_image: selectedImageUrl, presentation_name: presName})
+  }).then(r => r.json()).then(d => {
+    btn.disabled = false;
+    btn.textContent = '⚡ Generieren';
+    if (d.ok && d.gamma_url) {
+      statusEl.className = 'gamma-status success';
+      statusEl.innerHTML = `✅ Fertig! <a href="${esc(d.gamma_url)}" target="_blank" style="color:var(--green);font-weight:700;">In Gamma öffnen →</a>`;
+      const gl = document.getElementById('d-gamma-link');
+      gl.style.display = '';
+      gl.innerHTML = `<a href="${esc(d.gamma_url)}" target="_blank" style="color:var(--accent2);">🔗 Gamma</a>`;
+      const e = allEntries.find(x => x.id === currentEntryId);
+      if (e) e.gamma_url = d.gamma_url;
+      showToast('Slide generiert! 🎉');
+    } else if (d.ok && d.gen_id) {
+      statusEl.textContent = '⏳ Läuft noch... wird aktualisiert';
+      pollGeneration(d.gen_id);
+    } else {
+      statusEl.className = 'gamma-status error';
+      statusEl.textContent = '❌ ' + (d.error || 'Fehler');
+    }
+  }).catch(e => {
+    btn.disabled = false;
+    btn.textContent = '⚡ Generieren';
+    statusEl.className = 'gamma-status error';
+    statusEl.textContent = '❌ ' + e.message;
+  });
+}
+
+function pollGeneration(genId, n = 0) {
+  if (n > 20) { document.getElementById('gamma-status').textContent = '⚠️ Timeout'; return; }
+  setTimeout(() => {
+    fetch(`${API}/generations/${genId}/status`).then(r => r.json()).then(d => {
+      if (d.status === 'completed' && d.gamma_url) {
+        const s = document.getElementById('gamma-status');
+        s.className = 'gamma-status success';
+        s.innerHTML = `✅ Fertig! <a href="${esc(d.gamma_url)}" target="_blank" style="color:var(--green);font-weight:700;">In Gamma öffnen →</a>`;
+        document.getElementById('btn-gen').disabled = false;
+        document.getElementById('btn-gen').textContent = '⚡ Generieren';
+        showToast('Slide generiert! 🎉');
+      } else if (d.status === 'failed') {
+        document.getElementById('gamma-status').className = 'gamma-status error';
+        document.getElementById('gamma-status').textContent = '❌ Fehlgeschlagen';
+      } else pollGeneration(genId, n + 1);
+    });
+  }, 4000);
+}
+
+// ===== ADD ENTRY =====
+function openAddModal() {
+  document.getElementById('add-overlay').classList.add('open');
+  document.getElementById('add-merge-wrap').style.display = 'none';
+  document.getElementById('add-actions').style.display = 'flex';
+  _mergeTargetId = null;
+}
+
+function closeAddModal() {
+  document.getElementById('add-overlay').classList.remove('open');
+  document.getElementById('add-url').value = '';
+  document.getElementById('add-text').value = '';
+  _mergeTargetId = null;
+}
+
+function submitEntry(forceNew = false, mergeWith = null) {
+  const url = document.getElementById('add-url').value.trim();
+  const text = document.getElementById('add-text').value.trim();
+  if (!url && !text) { showToast('URL oder Text eingeben'); return; }
+  const btn = document.getElementById('add-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Recherche läuft...';
+  document.getElementById('add-merge-wrap').style.display = 'none';
+
+  const body = {input_url: url, input_text: text};
+  if (forceNew) body.force_new = true;
+  if (mergeWith) body.merge_with = mergeWith;
+
+  fetch(`${API}/entries`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  }).then(r => r.json()).then(d => {
+    btn.disabled = false;
+    btn.textContent = 'Recherche starten';
+
+    if (d.action === 'merge_candidates') {
+      document.getElementById('add-actions').style.display = 'none';
+      const wrap = document.getElementById('add-merge-wrap');
+      wrap.style.display = '';
+      document.getElementById('add-merge-list').innerHTML = d.similar_backlog.map(item =>
+        `<div class="merge-item" data-id="${item.id}" onclick="selectMerge(${item.id}, this)">
+          <strong>#${item.id}</strong> ${esc(item.title)}
+          <span style="color:var(--text3);font-size:11px;"> ${Math.round(item.score*100)}% Match</span>
+        </div>`).join('');
+      return;
+    }
+
+    if (d.ok) {
+      closeAddModal();
+      loadEntries();
+      showToast(d.merged ? `#${d.id} gemergt` : `#${d.id} erstellt: ${d.title}`);
+      setTimeout(() => openEntry(d.id), 500);
+    } else showToast('Fehler: ' + d.error);
+  }).catch(e => {
+    btn.disabled = false;
+    btn.textContent = 'Recherche starten';
+    showToast('Fehler: ' + e.message);
+  });
+}
+
+function selectMerge(id, el) {
+  _mergeTargetId = id;
+  document.querySelectorAll('.merge-item').forEach(i => i.style.borderColor = '');
+  el.style.borderColor = 'var(--accent)';
+  const btn = document.getElementById('btn-merge-ok');
+  btn.style.display = '';
+  btn.textContent = `Mergen mit #${id}`;
+}
+
+function confirmMerge() {
+  if (_mergeTargetId) submitEntry(false, _mergeTargetId);
+}
+
+// ===== UTILS =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function statusBg(s) {
+  return {'backlog':'rgba(124,92,252,0.12)','working on':'rgba(245,158,11,0.12)','done':'rgba(34,197,94,0.12)','ignored':'rgba(74,85,120,0.12)'}[s] || '';
+}
+function statusColor(s) {
+  return {'backlog':'#7c5cfc','working on':'#f59e0b','done':'#22c55e','ignored':'#4a5578'}[s] || '#e2e8f0';
+}
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeDrawer(); closeAddModal(); closeNewPresModal(); }
+});
+
+// Overlay clicks
+document.getElementById('add-overlay').addEventListener('click', function(e) { if (e.target === this) closeAddModal(); });
+document.getElementById('pres-overlay').addEventListener('click', function(e) { if (e.target === this) closeNewPresModal(); });
+</script>
+</body>
+</html>
