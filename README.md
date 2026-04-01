@@ -64,7 +64,7 @@ Create a new entry. Triggers Perplexity research.
 
 ```json
 {
-  "input_text": "Claude 3.7 Sonnet",
+  "input_text": "Claude Sonnet 4.6",
   "input_url": "https://anthropic.com/blog/..."
 }
 ```
