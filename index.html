@@ -476,6 +476,97 @@
     }
     .btn-primary:hover { opacity: 0.9; }
 
+    .header-summary { font-size: 12px; color: var(--text2); white-space: nowrap; font-weight: 600; }
+
+    /* ===== MATRIX ===== */
+    .matrix-toolbar {
+      display: flex; align-items: center; gap: 14px;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .matrix-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); cursor: pointer; font-weight: 600; }
+    .matrix-toggle input { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+    .matrix-hint { font-size: 11px; color: var(--text3); }
+
+    .matrix-wrap { flex: 1; overflow: auto; padding: 12px 16px 60px; }
+    .matrix-empty { padding: 60px 20px; text-align: center; color: var(--text3); font-size: 14px; }
+    table.matrix { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; }
+    table.matrix th, table.matrix td { border-bottom: 1px solid var(--border); }
+
+    /* header row */
+    table.matrix thead th {
+      position: sticky; top: 0; z-index: 3;
+      background: var(--bg2);
+      vertical-align: bottom;
+      padding: 8px 6px;
+      font-size: 11px; font-weight: 700;
+      color: var(--text2);
+      border-bottom: 2px solid var(--border2);
+    }
+    table.matrix thead th.pres-col {
+      text-align: center; min-width: 92px; max-width: 140px;
+      cursor: default;
+    }
+    table.matrix thead th.pres-col .pres-name { display: block; line-height: 1.25; word-break: break-word; }
+    table.matrix thead th.pres-col .pres-count { display: block; font-weight: 600; color: var(--text3); margin-top: 2px; font-size: 10px; }
+    table.matrix thead th.corner {
+      left: 0; z-index: 4;
+      text-align: left; min-width: 320px; max-width: 480px; width: 42%;
+    }
+
+    /* sticky first column (the bookmark) */
+    table.matrix td.bm-cell, table.matrix th.corner { position: sticky; left: 0; }
+    table.matrix td.bm-cell {
+      z-index: 2;
+      background: var(--bg2);
+      padding: 9px 12px 9px 10px;
+      border-right: 2px solid var(--border2);
+      border-left: 3px solid var(--border2);
+      vertical-align: top;
+    }
+    table.matrix tbody tr:hover td.bm-cell { background: var(--bg3); border-left-color: var(--accent); }
+    .bm-title { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.35; cursor: pointer; display: inline; }
+    .bm-title:hover { color: var(--accent2); text-decoration: underline; }
+    .bm-row-top { display: flex; align-items: baseline; gap: 7px; }
+    .bm-id { font-size: 11px; color: var(--text3); font-weight: 600; flex-shrink: 0; }
+    .bm-link { color: var(--accent2); text-decoration: none; font-size: 12px; flex-shrink: 0; }
+    .bm-link:hover { opacity: 0.8; }
+    .bm-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+    .bm-cat { font-size: 10px; font-weight: 700; color: var(--accent); background: var(--accent-glow); padding: 1px 7px; border-radius: 10px; }
+    .bm-domain { font-size: 11px; color: var(--text3); }
+    .bm-tags { font-size: 11px; color: var(--text2); }
+    .bm-tags .bm-tag { color: var(--text3); margin-right: 5px; }
+    .bm-date { font-size: 10px; color: var(--text3); }
+
+    /* toggle cells */
+    table.matrix td.cell {
+      text-align: center;
+      padding: 0;
+      cursor: pointer;
+      transition: background 0.12s;
+      min-width: 92px;
+    }
+    table.matrix td.cell:hover { background: var(--accent-glow); }
+    .cell-mark {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 7px; margin: 8px auto;
+      font-size: 14px; line-height: 1;
+      border: 1.5px solid var(--border2);
+      color: transparent;
+      transition: all 0.12s;
+    }
+    td.cell:hover .cell-mark { border-color: var(--accent); color: var(--text3); }
+    td.cell:hover .cell-mark::after { content: '+'; }
+    .cell-mark.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .cell-mark.on::after { content: '✓'; }
+    td.cell.on:hover .cell-mark { background: var(--red); border-color: var(--red); color: #fff; }
+    td.cell.on:hover .cell-mark::after { content: '✕'; }
+    table.matrix tbody tr:nth-child(even) td.cell { background: rgba(255,255,255,0.012); }
+    table.matrix tbody tr:hover td { background-color: rgba(139,109,255,0.05); }
+
     /* ===== TABS (mobile view) ===== */
     .tab-bar {
       display: none;
@@ -1115,15 +1206,11 @@
   <div class="header">
     <div class="header-left">
       <div class="logo">🌉 KB</div>
-      <div class="header-stats">
-        <span class="stat-pill backlog" id="stat-backlog">0</span>
-        <span class="stat-pill working" id="stat-working">0</span>
-        <span class="stat-pill done" id="stat-done">0</span>
-        <span class="stat-pill ignored" id="stat-ignored">0</span>
-      </div>
+      <span class="header-summary" id="header-summary"></span>
     </div>
     <div class="header-actions">
       <button class="btn-icon" onclick="loadEntries()" title="Neu laden">↻</button>
+      <button class="btn-icon" onclick="openNewPresModal()" title="Neue Präsentation">🎞 ＋</button>
       <button class="btn-primary" onclick="openAddModal()">＋ Neu</button>
     </div>
   </div>
@@ -1135,17 +1222,6 @@
     <button class="search-clear" id="search-clear" onclick="clearSearch()" title="Suche zurücksetzen">✕</button>
     <span class="search-count" id="search-count"></span>
   </div>
-
-  <!-- Mobile tabs -->
-  <div class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('backlog', this)">Backlog</button>
-    <button class="tab-btn" onclick="switchTab('working', this)">Working</button>
-    <button class="tab-btn" onclick="switchTab('done', this)">Done</button>
-    <button class="tab-btn" onclick="switchTab('ignored', this)">Ignored</button>
-  </div>
-
-  <!-- Presentation Filter Bar -->
-  <div class="pres-filter-bar" id="pres-filter-bar"></div>
 
   <!-- Tag Filter Bar -->
   <div class="tag-filter-bar" id="tag-filter-bar"></div>
@@ -1161,40 +1237,13 @@
     <button class="btn-date-clear" id="btn-date-clear" onclick="clearDateFilter()">✕ Reset</button>
   </div>
 
-  <div class="kanban">
-    <div class="column col-backlog tab-active" id="col-wrap-backlog">
-      <div class="column-header">
-        <div class="column-title"><span class="col-dot"></span> Backlog</div>
-        <button class="column-select-all" onclick="selectColumnCards(event, 'backlog')" title="Alle aktuell gefilterten Backlog-Karten auswählen">Spalte wählen</button>
-        <span class="col-count" id="count-backlog">0</span>
-      </div>
-      <div class="cards" id="col-backlog"></div>
-    </div>
-    <div class="column col-working" id="col-wrap-working">
-      <div class="column-header">
-        <div class="column-title"><span class="col-dot"></span> Working On</div>
-        <button class="column-select-all" onclick="selectColumnCards(event, 'working')" title="Alle aktuell gefilterten Working-On-Karten auswählen">Spalte wählen</button>
-        <span class="col-count" id="count-working">0</span>
-      </div>
-      <div class="cards" id="col-working"></div>
-    </div>
-    <div class="column col-done" id="col-wrap-done">
-      <div class="column-header">
-        <div class="column-title"><span class="col-dot"></span> Done</div>
-        <button class="column-select-all" onclick="selectColumnCards(event, 'done')" title="Alle aktuell gefilterten Done-Karten auswählen">Spalte wählen</button>
-        <span class="col-count" id="count-done">0</span>
-      </div>
-      <div class="cards" id="col-done"></div>
-    </div>
-    <div class="column col-ignored" id="col-wrap-ignored">
-      <div class="column-header">
-        <div class="column-title"><span class="col-dot"></span> Ignored</div>
-        <button class="column-select-all" onclick="selectColumnCards(event, 'ignored')" title="Alle aktuell gefilterten Ignored-Karten auswählen">Spalte wählen</button>
-        <span class="col-count" id="count-ignored">0</span>
-      </div>
-      <div class="cards" id="col-ignored"></div>
-    </div>
+  <!-- Matrix toolbar -->
+  <div class="matrix-toolbar">
+    <label class="matrix-toggle"><input type="checkbox" id="only-unassigned" onchange="onUnassignedToggle(this.checked)" /> Nur ohne Präsentation</label>
+    <span class="matrix-hint">Klick auf eine Zelle = Bookmark der Präsentation zuordnen/entfernen</span>
   </div>
+
+  <div class="matrix-wrap" id="matrix-wrap"></div>
 </div>
 
 <!-- BULK TOOLBAR -->
@@ -1374,12 +1423,6 @@
     </div>
 
     <div class="drawer-footer">
-      <div class="status-chips">
-        <button class="chip backlog" onclick="setStatus('backlog')">Backlog</button>
-        <button class="chip working" onclick="setStatus('working on')">Working</button>
-        <button class="chip done" onclick="setStatus('done')">Done</button>
-        <button class="chip ignored" onclick="setStatus('ignored')">Ignored</button>
-      </div>
       <div class="footer-actions">
         <button class="btn-ghost" onclick="startEntryEdit()" title="Item bearbeiten">Bearbeiten</button>
         <button class="btn-ghost" onclick="copySummary()" title="Zusammenfassung kopieren">Zusammenfassung kopieren</button>
@@ -1469,6 +1512,7 @@ let _mergeTargetId = null;
 let activePresFilter = null; // null = all, 0 = unassigned, >0 = pres id
 let activeTagFilter = null; // null = all, '__untagged' = entries without tags, string = tag
 let searchQuery = ''; // free-text search across title/summary/category/tags/notes
+let matrixUnassignedOnly = false; // matrix: show only bookmarks not in any presentation
 let activeDateFilter = null; // null = all, 'YYYY-MM' = month
 let selectedCards = new Set(); // bulk selection
 let currentColumnEntries = {'backlog': [], 'working': [], 'done': [], 'ignored': []};
@@ -1491,12 +1535,10 @@ startApp();
 function loadEntries() {
   fetch(`${API}/entries`).then(r => r.json()).then(entries => {
     allEntries = entries;
-    renderPresFilterBar();
     renderTagFilterBar();
     updateTagSuggestions();
     resetColumnLimits();
     applyFiltersAndRender();
-    initDragDrop();
   });
 }
 
@@ -1699,6 +1741,7 @@ function setTagFilter(val) {
 
 function renderPresFilterBar() {
   const bar = document.getElementById('pres-filter-bar');
+  if (!bar) return; // removed in matrix view
   if (!presentations.length) { bar.innerHTML = ''; return; }
 
   const hasUnassigned = allEntries.some(e => !e.presentation_id);
@@ -1773,26 +1816,114 @@ function applyFiltersAndRender() {
       return true;
     });
   }
-  renderBoard(entries);
+  if (matrixUnassignedOnly) {
+    entries = entries.filter(e => getPresIds(e).length === 0);
+  }
+  renderMatrix(entries);
 }
 
-function renderBoard(entries) {
-  const cols = {'backlog': [], 'working on': [], 'done': [], 'ignored': []};
-  entries.forEach(e => (cols[e.status] || cols.backlog).push(e));
-  renderCol('backlog', cols['backlog']);
-  renderCol('working', cols['working on']);
-  renderCol('done', cols['done']);
-  renderCol('ignored', cols['ignored']);
-  document.getElementById('stat-backlog').textContent = cols['backlog'].length + ' Backlog';
-  document.getElementById('stat-working').textContent = cols['working on'].length + ' Working';
-  document.getElementById('stat-done').textContent = cols['done'].length + ' Done';
-  document.getElementById('stat-ignored').textContent = cols['ignored'].length + ' Ignored';
-  ['backlog','working','done','ignored'].forEach((k, i) => {
-    const keys = ['backlog','working on','done','ignored'];
-    document.getElementById('count-'+k).textContent = cols[keys[i]].length;
-  });
+function domainOf(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch(_) { return ''; }
+}
+
+function renderMatrix(entries) {
+  const wrap = document.getElementById('matrix-wrap');
+  if (!wrap) return;
+
+  // Header summary
+  const summaryEl = document.getElementById('header-summary');
+  if (summaryEl) summaryEl.textContent = `${allEntries.length} Bookmarks · ${presentations.length} Präsentationen`;
   const countEl = document.getElementById('search-count');
   if (countEl) countEl.textContent = searchQuery ? `${entries.length} Treffer` : '';
+
+  if (!entries.length) {
+    wrap.innerHTML = `<div class="matrix-empty">Keine Bookmarks für die aktuellen Filter.</div>`;
+    return;
+  }
+
+  // Count membership per presentation (over the filtered set)
+  const presCount = {};
+  presentations.forEach(p => presCount[p.id] = 0);
+  entries.forEach(e => getPresIds(e).forEach(pid => { if (pid in presCount) presCount[pid]++; }));
+
+  const headCells = presentations.map(p =>
+    `<th class="pres-col" title="${esc(p.name)}"><span class="pres-name">${esc(p.name)}</span><span class="pres-count">${presCount[p.id] || 0}</span></th>`
+  ).join('');
+
+  const rows = entries.map(e => {
+    const presIds = getPresIds(e);
+    const url = e.input_url || '';
+    const dom = domainOf(url);
+    const linkHtml = url ? `<a class="bm-link" href="${esc(url)}" target="_blank" rel="noopener" title="Original öffnen" onclick="event.stopPropagation()">↗</a>` : '';
+    const domHtml = dom ? `<span class="bm-domain">${esc(dom)}</span>` : '';
+    const tags = getTags(e).slice(0, 6);
+    const tagHtml = tags.length ? `<span class="bm-tags">${tags.map(t => `<span class="bm-tag">#${esc(t)}</span>`).join('')}</span>` : '';
+    const date = new Date(e.created_at).toLocaleDateString('de-CH', {day:'2-digit',month:'2-digit',year:'2-digit'});
+    const cells = presentations.map(p => {
+      const on = presIds.includes(p.id);
+      return `<td class="cell ${on ? 'on' : ''}" title="${esc(p.name)}" onclick="toggleMembership(${e.id}, ${p.id})"><span class="cell-mark ${on ? 'on' : ''}"></span></td>`;
+    }).join('');
+    return `<tr>
+      <td class="bm-cell">
+        <div class="bm-row-top">
+          <span class="bm-id">#${e.id}</span>
+          <span class="bm-title" onclick="openEntry(${e.id})">${esc(e.title)}</span>
+          ${linkHtml}
+        </div>
+        <div class="bm-meta">
+          <span class="bm-cat">${esc(e.category || 'General')}</span>
+          ${domHtml}
+          ${tagHtml}
+          <span class="bm-date">${date}</span>
+        </div>
+      </td>
+      ${cells}
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `<table class="matrix">
+    <thead><tr><th class="corner">Bookmark <span style="color:var(--text3);font-weight:600">(${entries.length})</span></th>${headCells}</tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function onUnassignedToggle(checked) {
+  matrixUnassignedOnly = !!checked;
+  applyFiltersAndRender();
+}
+
+// Rebuild the presentation checkboxes inside the open drawer for entry e.
+function refreshDrawerPresentations(e) {
+  const box = document.getElementById('pres-checkboxes');
+  if (!box) return;
+  const presIds = getPresIds(e);
+  box.innerHTML = presentations.length
+    ? presentations.map(p => {
+        const checked = presIds.includes(p.id) ? 'checked' : '';
+        return `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;background:var(--bg3);border:1px solid ${checked ? 'var(--accent)' : 'var(--border)'};border-radius:8px;padding:4px 10px;font-size:12px">
+          <input type="checkbox" ${checked} onchange="togglePresentation(${p.id})" style="accent-color:var(--accent);width:14px;height:14px" />${esc(p.name)}</label>`;
+      }).join('')
+    : '<span style="font-size:12px;color:var(--text3)">Noch keine Präsentationen – oben mit 🎞＋ anlegen</span>';
+}
+
+// Toggle a presentation membership for any bookmark (matrix cell click).
+function toggleMembership(entryId, presId) {
+  const e = allEntries.find(x => x.id === entryId);
+  if (!e) return;
+  const ids = getPresIds(e);
+  const idx = ids.indexOf(presId);
+  if (idx >= 0) ids.splice(idx, 1); else ids.push(presId);
+  const newVal = ids.length ? ids.join(',') : null;
+  const prevVal = e.presentation_id;
+  e.presentation_id = newVal; // optimistic
+  applyFiltersAndRender();
+  fetch(`${API}/entries/${entryId}/presentation`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({presentation_id: newVal})
+  }).then(r => r.json()).then(d => {
+    if (!d.ok) { e.presentation_id = prevVal; applyFiltersAndRender(); showToast('Konnte nicht speichern'); }
+    if (currentEntryId === entryId) refreshDrawerPresentations(e);
+  }).catch(() => { e.presentation_id = prevVal; applyFiltersAndRender(); showToast('Netzwerkfehler'); });
 }
 
 function renderCol(key, entries) {
@@ -1935,14 +2066,9 @@ async function openEntry(id, opts = {}) {
   document.getElementById('notes-status').textContent = '';
 
   const badge = document.getElementById('d-badge');
-  badge.textContent = e.status.charAt(0).toUpperCase() + e.status.slice(1);
-  badge.style.background = statusBg(e.status);
-  badge.style.color = statusColor(e.status);
-
-  document.querySelectorAll('.chip').forEach(c => {
-    const s = c.classList.contains('working') ? 'working on' : Array.from(c.classList).find(x => ['backlog','done','ignored'].includes(x));
-    c.classList.toggle('active', s === e.status);
-  });
+  badge.textContent = e.category || '';
+  badge.style.background = 'var(--accent-glow)';
+  badge.style.color = 'var(--accent)';
 
   const relScoreEl = document.getElementById('d-rel-score');
   const relTextEl = document.getElementById('d-rel-text');
@@ -1994,14 +2120,7 @@ async function openEntry(id, opts = {}) {
   renderImages(imgs);
 
   // Presentation checkboxes (multi-assign)
-  const presIds = getPresIds(e);
-  document.getElementById('pres-checkboxes').innerHTML = presentations.length
-    ? presentations.map(p => {
-        const checked = presIds.includes(p.id) ? 'checked' : '';
-        return `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;background:var(--card-bg,#1a1e2e);border:1px solid ${checked ? 'var(--accent,#7c5cfc)' : 'var(--border,#2a2f45)'};border-radius:8px;padding:4px 10px;font-size:12px">
-          <input type="checkbox" ${checked} onchange="togglePresentation(${p.id})" style="accent-color:var(--accent,#7c5cfc);width:14px;height:14px" />${esc(p.name)}</label>`;
-      }).join('')
-    : '<span style="font-size:12px;color:var(--muted,#6b7199)">Keine Präsentationen vorhanden</span>';
+  refreshDrawerPresentations(e);
 
   // Gamma status reset
   document.getElementById('gamma-status').textContent = '';
@@ -2242,25 +2361,18 @@ function togglePresentation(presId) {
   if (idx >= 0) ids.splice(idx, 1); else ids.push(presId);
   const newVal = ids.length ? ids.join(',') : null;
 
+  e.presentation_id = newVal; // optimistic
+  refreshDrawerPresentations(e);
+  applyFiltersAndRender();
   fetch(`${API}/entries/${currentEntryId}/presentation`, {
     method: 'PATCH', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({presentation_id: newVal})
   }).then(r => r.json()).then(d => {
     if (d.ok) {
-      e.presentation_id = newVal;
       const pres = presId ? presentations.find(p => p.id == presId) : null;
       showToast(idx >= 0 ? `Entfernt: ${pres?.name}` : `Zugewiesen: ${pres?.name}`);
-      applyFiltersAndRender();
-      renderPresFilterBar();
-      // Re-render checkboxes
-      const presIds = getPresIds(e);
-      document.getElementById('pres-checkboxes').innerHTML = presentations.map(p => {
-        const checked = presIds.includes(p.id) ? 'checked' : '';
-        return `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;background:var(--card-bg,#1a1e2e);border:1px solid ${checked ? 'var(--accent,#7c5cfc)' : 'var(--border,#2a2f45)'};border-radius:8px;padding:4px 10px;font-size:12px">
-          <input type="checkbox" ${checked} onchange="togglePresentation(${p.id})" style="accent-color:var(--accent,#7c5cfc);width:14px;height:14px" />${esc(p.name)}</label>`;
-      }).join('');
-    }
-  });
+    } else { showToast('Konnte nicht speichern'); }
+  }).catch(() => showToast('Netzwerkfehler'));
 }
 
 function assignPresentation(presId) {
@@ -2597,6 +2709,7 @@ function loadPresentations() {
     document.getElementById('bulk-pres-select').innerHTML =
       '<option value="">Präsentation...</option>' + opts;
     renderPresFilterBar();
+    if (allEntries.length) applyFiltersAndRender(); // refresh matrix columns
   });
 }
 
