@@ -1,8 +1,28 @@
+# Runtime databases
 *.db
 *.db-shm
 *.db-wal
+
+# Python/runtime artifacts
 __pycache__/
 *.py[cod]
+.pytest_cache/
+
+# Secrets and local config
 .env
 .env.*
+*.env
+
+# Logs and local backups
 *.log
+*.bak
+*.bak-*
+*.backup
+
+# Large generated/downloaded media
+videos/
+*.mp4
+*.mov
+*.webm
+*.mp3
+*.wav

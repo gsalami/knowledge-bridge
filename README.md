@@ -1,103 +1,114 @@
 # Knowledge Bridge (KB)
 
-A personal AI knowledge base with a Kanban-style board. Drop in a topic or URL, and it uses Perplexity to research it, then organizes entries into **Backlog → Working On → Done**.
+Personal AI knowledge base for Gu's research workflow. The live app runs at:
 
-![Knowledge Bridge Screenshot](https://gu.kuble.com/kb/og.png)
+- `https://gu.kuble.com/kb/`
+- Server path: `/var/www/publish/kb/`
+- Backend service: `kb-api.service`
+
+KB is a Kanban-style board for links, topics and research notes. Entries move through **Backlog → Working On → Done / Ignored** and can be tagged, grouped into presentations, annotated and turned into Gamma slides.
 
 ## Features
 
-- 🔍 **Perplexity-powered research** — paste a URL or topic and get a full structured report
-- 📋 **Kanban board** — drag entries through Backlog → Working On → Done / Ignored
-- 🔗 **Merge detection** — similar backlog entries are flagged for merging
-- 🖼️ **Image search** — find and attach images to entries (article scrape + DuckDuckGo/Bing)
-- 📊 **Gamma slides** — generate a Gamma presentation from any entry
-- 🔒 **Password-protected frontend**
+- Kanban board with drag-and-drop status changes
+- Compact tag filtering with top quick-tags plus an all-tags picker
+- Tag editing and bulk tag operations
+- Date filters and presentation filters
+- Similar-entry merge detection
+- Image search and image attachment helpers
+- Gamma slide generation
+- Agent API under `/kb/api/agent/*` for external coding/research agents
+- Password-protected frontend
 
-## Setup
+## Repository hygiene
 
-### Requirements
+This repo contains source code and lightweight assets only:
+
+- `api.py`
+- `index.html`
+- `favicon.svg`
+- docs
+
+Do **not** commit runtime data or local artifacts:
+
+- `kb.db`, `*.db`, `*.db-wal`, `*.db-shm`
+- `__pycache__/`, `*.pyc`
+- `.env`, local secret files
+- server backup files like `*.bak-*`
+- downloaded videos/audio/images unless intentionally added as source assets
+
+## Requirements
 
 ```bash
-pip install flask requests beautifulsoup4 duckduckgo-search
+pip install flask requests beautifulsoup4 ddgs duckduckgo-search
 ```
 
-### Configuration
+`ddgs` is preferred for DuckDuckGo search. `duckduckgo-search` is kept as fallback compatibility.
 
-Set these environment variables (or edit defaults in `api.py`):
+## Configuration
+
+All secrets and runtime paths should come from environment variables or systemd EnvironmentFiles.
 
 | Variable | Description | Default |
 |---|---|---|
-| `KB_DB_PATH` | Path to SQLite database | `./kb.db` |
-| `PERPLEXITY_KEY` | Perplexity API key | — |
-| `GAMMA_API_KEY` | Gamma API key (optional, for slide generation) | — |
+| `KB_DB_PATH` | SQLite database path | `/var/www/publish/kb/kb.db` |
 | `KB_PASSWORD` | Frontend password | `changeme` |
+| `GAMMA_API_KEY` | Gamma API key for slide generation | empty |
+| `PERPLEXITY_API_KEY` | Legacy research fallback | empty |
+| `OPENAI_API_KEY` | Grounded research provider, read from env or OpenClaw config | empty |
+| `XAI_API_KEY` | Grounded research provider, read from env or OpenClaw config | empty |
+| `KB_AGENT_API_TOKEN` | Bearer token for `/kb/api/agent/*` | empty |
 
-### Run
+On Gu's server, runtime secrets live outside git in root-owned EnvironmentFiles.
+
+## Run locally
 
 ```bash
-export PERPLEXITY_KEY=your_key_here
-export KB_PASSWORD=your_password
-python api.py
+export KB_DB_PATH="$PWD/kb.db"
+export KB_PASSWORD="<local-dev-password>"
+python3 api.py
 ```
 
 The app runs on `http://localhost:8084`.
 
-### Nginx (optional)
+## Live deployment notes
 
-If you want to serve via Nginx, proxy `/kb/` to the Flask backend:
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the exact server paths and verification commands.
 
-```nginx
-location /kb/ {
-    proxy_pass http://127.0.0.1:8084;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-}
+For frontend-only changes, copying `index.html` is enough, no service restart needed. For `api.py` changes, restart `kb-api.service` after syntax checks.
+
+## Verification
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+import re
+html = Path('index.html').read_text()
+scripts = '\n'.join(re.findall(r'<script(?:\\s[^>]*)?>(.*?)</script>', html, flags=re.S|re.I))
+Path('/tmp/kb-inline.js').write_text(scripts)
+print(len(scripts), 'scripts', len(scripts), 'chars')
+PY
+node --check /tmp/kb-inline.js
+python3 -m py_compile api.py
 ```
 
-Serve `index.html` and `favicon.svg` as static files, or let Flask handle them.
+## API overview
 
-## API
-
-### `POST /kb/api/entries`
-
-Create a new entry. Triggers Perplexity research.
-
-```json
-{
-  "input_text": "Claude Sonnet 4.6",
-  "input_url": "https://anthropic.com/blog/..."
-}
-```
-
-### `GET /kb/api/entries`
-
-List all entries.
-
-### `PATCH /kb/api/entries/:id/status`
-
-Update status: `backlog | working on | done | ignored`
-
-### `DELETE /kb/api/entries/:id`
-
-Delete an entry.
-
-### `POST /kb/api/entries/:id/find-images`
-
-Find images for an entry (article scrape + web search).
-
-### `POST /kb/api/entries/:id/generate-slide`
-
-Generate a Gamma presentation from the entry.
+- `POST /kb/api/entries` creates an entry
+- `GET /kb/api/entries` lists entries
+- `GET /kb/api/entries/<id>` reads one entry
+- `PATCH /kb/api/entries/<id>/status` updates status
+- `PATCH /kb/api/entries/<id>/tags` updates tags
+- `DELETE /kb/api/entries/<id>` deletes an entry
+- `POST /kb/api/entries/<id>/find-images` finds images
+- `POST /kb/api/entries/<id>/generate-slide` starts Gamma slide generation
+- `GET /kb/api/agent/docs` documents the external agent API
 
 ## Stack
 
-- **Backend:** Python / Flask
-- **Frontend:** Vanilla JS / HTML / CSS (single file)
-- **DB:** SQLite
-- **Research:** Perplexity Sonar API
-- **Slides:** Gamma API (optional)
-- **Images:** DuckDuckGo / Bing image search
-
-## License
-
-MIT
+- Backend: Python / Flask
+- Frontend: Vanilla JS / HTML / CSS
+- DB: SQLite
+- Research providers: OpenAI/xAI/legacy Perplexity hooks
+- Slides: Gamma API
+- Images: article scrape plus DuckDuckGo/Bing helpers
