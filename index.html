@@ -10,23 +10,24 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0d0f17;
-      --bg2: #13161f;
-      --bg3: #1a1d2a;
-      --bg4: #1f2335;
-      --border: #252840;
-      --border2: #2e3250;
-      --text: #e2e8f0;
-      --text2: #7986a8;
-      --text3: #4a5578;
-      --accent: #7c5cfc;
-      --accent2: #4fa3ff;
-      --accent-glow: rgba(124,92,252,0.2);
-      --green: #22c55e;
-      --yellow: #f59e0b;
-      --red: #ef4444;
+      --bg: #0a0c12;
+      --bg2: #111420;
+      --bg3: #181c2b;
+      --bg4: #202538;
+      --border: #2c3252;
+      --border2: #3b4368;
+      --text: #f5f8fd;
+      --text2: #aab6d6;
+      --text3: #6d7aa1;
+      --accent: #8b6dff;
+      --accent2: #5cb0ff;
+      --accent-glow: rgba(139,109,255,0.28);
+      --green: #34d36a;
+      --yellow: #fbb022;
+      --red: #f4555a;
       --radius: 12px;
       --radius-sm: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.25);
     }
 
     html, body { height: 100%; }
@@ -38,62 +39,6 @@
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
     }
-
-    /* ===== LOGIN ===== */
-    #login-screen {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    .login-box {
-      background: var(--bg2);
-      border: 1px solid var(--border2);
-      border-radius: 20px;
-      padding: 40px 32px;
-      width: 100%;
-      max-width: 360px;
-      text-align: center;
-    }
-    .login-logo {
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
-    .login-box h1 {
-      font-size: 22px;
-      font-weight: 700;
-      margin-bottom: 4px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .login-box p { color: var(--text2); font-size: 13px; margin-bottom: 28px; }
-    .login-box input {
-      width: 100%;
-      padding: 13px 16px;
-      background: var(--bg3);
-      border: 1px solid var(--border2);
-      border-radius: var(--radius-sm);
-      color: var(--text);
-      font-size: 15px;
-      margin-bottom: 12px;
-      outline: none;
-    }
-    .login-box input:focus { border-color: var(--accent); }
-    .login-box button {
-      width: 100%;
-      padding: 13px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border: none;
-      border-radius: var(--radius-sm);
-      color: white;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .login-error { color: var(--red); font-size: 13px; margin-top: 10px; }
 
     /* ===== APP ===== */
     #app { display: none; flex-direction: column; min-height: 100vh; }
@@ -147,6 +92,48 @@
     .stat-pill.ignored { background: rgba(74,85,120,0.12); color: var(--text3); border: 1px solid rgba(74,85,120,0.25); }
     .stat-pill.pres-filter { background: rgba(79,163,255,0.12); color: var(--accent2); border: 1px solid rgba(79,163,255,0.3); }
     .stat-pill.pres-filter.active { background: rgba(79,163,255,0.25); border-color: var(--accent2); }
+
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+      flex-shrink: 0;
+    }
+    .search-icon { font-size: 13px; opacity: 0.7; flex-shrink: 0; }
+    .search-input {
+      flex: 1;
+      min-width: 0;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 13px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .search-input::placeholder { color: var(--text3); }
+    .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .search-clear {
+      flex-shrink: 0;
+      display: none;
+      background: var(--bg4);
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      font-size: 12px;
+      line-height: 1;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .search-clear:hover { border-color: var(--red); color: var(--red); }
+    .search-bar.has-query .search-clear { display: inline-flex; align-items: center; justify-content: center; }
+    .search-count { flex-shrink: 0; font-size: 11px; font-weight: 600; color: var(--text2); white-space: nowrap; }
 
     .pres-filter-bar {
       display: flex;
@@ -580,15 +567,19 @@
     .card {
       background: var(--bg3);
       border: 1px solid var(--border);
+      border-left: 3px solid var(--border2);
       border-radius: var(--radius-sm);
       padding: 12px;
       cursor: pointer;
-      transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s, background 0.15s;
     }
     .card:hover {
       border-color: var(--accent);
+      border-left-color: var(--accent);
+      background: var(--bg4);
       transform: translateY(-1px);
-      box-shadow: 0 4px 20px rgba(124,92,252,0.1);
+      box-shadow: 0 6px 22px rgba(0,0,0,0.4);
     }
     .card-top { display: flex; align-items: flex-start; gap: 7px; margin-bottom: 7px; }
     .card-id { color: var(--text3); font-size: 10px; flex-shrink: 0; margin-top: 3px; font-weight: 600; }
@@ -1119,18 +1110,6 @@
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login-screen">
-  <div class="login-box">
-    <div class="login-logo">🌉</div>
-    <h1>Knowledge Bridge</h1>
-    <p>Dein monatliches KI-Update Board</p>
-    <input type="password" id="pw-input" placeholder="Passwort" autocomplete="current-password" />
-    <button onclick="doLogin()">Einloggen</button>
-    <div class="login-error" id="login-error"></div>
-  </div>
-</div>
-
 <!-- APP -->
 <div id="app">
   <div class="header">
@@ -1147,6 +1126,14 @@
       <button class="btn-icon" onclick="loadEntries()" title="Neu laden">↻</button>
       <button class="btn-primary" onclick="openAddModal()">＋ Neu</button>
     </div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="search-bar">
+    <span class="search-icon">🔎</span>
+    <input type="search" id="search-input" class="search-input" placeholder="Suchen: Titel, Zusammenfassung, Kategorie, Tags…" autocomplete="off" oninput="onSearchInput(this.value)" />
+    <button class="search-clear" id="search-clear" onclick="clearSearch()" title="Suche zurücksetzen">✕</button>
+    <span class="search-count" id="search-count"></span>
   </div>
 
   <!-- Mobile tabs -->
@@ -1481,6 +1468,7 @@ let presentations = [];
 let _mergeTargetId = null;
 let activePresFilter = null; // null = all, 0 = unassigned, >0 = pres id
 let activeTagFilter = null; // null = all, '__untagged' = entries without tags, string = tag
+let searchQuery = ''; // free-text search across title/summary/category/tags/notes
 let activeDateFilter = null; // null = all, 'YYYY-MM' = month
 let selectedCards = new Set(); // bulk selection
 let currentColumnEntries = {'backlog': [], 'working': [], 'done': [], 'ignored': []};
@@ -1490,29 +1478,14 @@ const columnBaseLimits = {backlog: 30, working: 30, done: 12, ignored: 12};
 const columnLimitStep = {backlog: 30, working: 30, done: 20, ignored: 20};
 let columnLimits = {...columnBaseLimits};
 
-// ===== AUTH =====
-function doLogin(savedPw) {
-  const pw = savedPw || document.getElementById('pw-input').value;
-  fetch(`${API}/auth`, {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({password: pw})
-  }).then(r => r.json()).then(d => {
-    if (d.ok) {
-      localStorage.setItem('kb_auth', pw);
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('app').style.display = 'flex';
-      loadEntries();
-      loadPresentations();
-      checkDeeplink();
-    } else {
-      localStorage.removeItem('kb_auth');
-      document.getElementById('login-error').textContent = 'Falsches Passwort';
-    }
-  });
+// ===== START (Passwortschutz entfernt – Board ist offen) =====
+function startApp() {
+  document.getElementById('app').style.display = 'flex';
+  loadEntries();
+  loadPresentations();
+  checkDeeplink();
 }
-document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-const _savedPw = localStorage.getItem('kb_auth');
-if (_savedPw) doLogin(_savedPw);
+startApp();
 
 // ===== ENTRIES =====
 function loadEntries() {
@@ -1749,8 +1722,36 @@ function setPresFilter(val) {
   applyFiltersAndRender();
 }
 
+function entryMatchesSearch(e, q) {
+  if (!q) return true;
+  const hay = [
+    e.title, e.summary, e.category, e.notes,
+    getTags(e).join(' ')
+  ].map(x => String(x || '').toLowerCase()).join('  ');
+  // Every whitespace-separated term must be present (AND search).
+  return q.split(/\s+/).filter(Boolean).every(term => hay.includes(term));
+}
+
+function onSearchInput(val) {
+  searchQuery = String(val || '').trim().toLowerCase();
+  const bar = document.querySelector('.search-bar');
+  if (bar) bar.classList.toggle('has-query', !!searchQuery);
+  resetColumnLimits();
+  applyFiltersAndRender();
+}
+
+function clearSearch() {
+  const input = document.getElementById('search-input');
+  if (input) input.value = '';
+  onSearchInput('');
+  if (input) input.focus();
+}
+
 function applyFiltersAndRender() {
   let entries = allEntries;
+  if (searchQuery) {
+    entries = entries.filter(e => entryMatchesSearch(e, searchQuery));
+  }
   if (activePresFilter === 0) {
     entries = entries.filter(e => !e.presentation_id);
   } else if (activePresFilter !== null) {
@@ -1790,6 +1791,8 @@ function renderBoard(entries) {
     const keys = ['backlog','working on','done','ignored'];
     document.getElementById('count-'+k).textContent = cols[keys[i]].length;
   });
+  const countEl = document.getElementById('search-count');
+  if (countEl) countEl.textContent = searchQuery ? `${entries.length} Treffer` : '';
 }
 
 function renderCol(key, entries) {
@@ -2805,7 +2808,16 @@ function statusColor(s) {
 document.addEventListener('keydown', e => {
   if (isFullscreenMode && e.key === 'ArrowLeft') openAdjacentEntry(-1);
   if (isFullscreenMode && e.key === 'ArrowRight') openAdjacentEntry(1);
-  if (e.key === 'Escape') { closeDrawer(); closeAddModal(); closeNewPresModal(); }
+  if (e.key === 'Escape') {
+    if (searchQuery && document.activeElement && document.activeElement.id === 'search-input') { clearSearch(); return; }
+    closeDrawer(); closeAddModal(); closeNewPresModal();
+  }
+  // "/" focuses the search box (unless already typing in a field).
+  const tag = (document.activeElement && document.activeElement.tagName) || '';
+  if (e.key === '/' && !['INPUT','TEXTAREA','SELECT'].includes(tag)) {
+    const input = document.getElementById('search-input');
+    if (input) { e.preventDefault(); input.focus(); }
+  }
 });
 
 // Overlay clicks

@@ -12,7 +12,9 @@ import re
 import hmac
 import functools
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone
+from email.utils import format_datetime
+from xml.sax.saxutils import escape as xml_escape
 from urllib.parse import urlparse, urljoin
 from flask import Flask, request, jsonify, send_from_directory, Response
 import requests
@@ -584,10 +586,9 @@ def brain_related(entry_id):
 
 @app.route('/kb/api/auth', methods=['POST'])
 def auth():
-    data = request.json
-    if data.get('password') == PASSWORD:
-        return jsonify({'ok': True})
-    return jsonify({'ok': False, 'error': 'Wrong password'}), 401
+    # Password protection removed: the board is open. Kept for backwards
+    # compatibility so any cached frontend that still calls it keeps working.
+    return jsonify({'ok': True})
 
 
 # ============ ENTRIES ============
@@ -1399,6 +1400,127 @@ def agent_health():
     })
 
 
+PUBLIC_BASE_URL = os.environ.get('KB_PUBLIC_BASE_URL', 'https://gu.kuble.com/kb')
+
+
+def _rfc822(iso_str):
+    """Convert a stored ISO timestamp to an RFC-822 date for RSS pubDate."""
+    if not iso_str:
+        return format_datetime(datetime.now(timezone.utc))
+    try:
+        s = str(iso_str).replace('Z', '+00:00')
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return format_datetime(dt)
+    except Exception:
+        return format_datetime(datetime.now(timezone.utc))
+
+
+def build_rss(entries, title, description, self_url):
+    """Render a list of entry rows as an RSS 2.0 feed (public, no token)."""
+    now = format_datetime(datetime.now(timezone.utc))
+    items = []
+    for row in entries:
+        e = serialize_entry(row, include_full_report=False)
+        link = f"{PUBLIC_BASE_URL}/#id-{e['id']}"
+        tags = e.get('tags') or []
+        # Prefer the summary; fall back to the relevance note.
+        body = (e.get('summary') or e.get('relevance') or '').strip()
+        cats = ''.join(
+            f"<category>{xml_escape(str(t))}</category>" for t in ([e.get('category')] + list(tags)) if t
+        )
+        items.append(
+            "<item>"
+            f"<title>{xml_escape(str(e.get('title') or 'Untitled'))}</title>"
+            f"<link>{xml_escape(link)}</link>"
+            f"<guid isPermaLink=\"false\">kb-entry-{e['id']}</guid>"
+            f"<pubDate>{_rfc822(e.get('created_at'))}</pubDate>"
+            f"<description>{xml_escape(body)}</description>"
+            f"{cats}"
+            "</item>"
+        )
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n'
+        '<channel>'
+        f"<title>{xml_escape(title)}</title>"
+        f"<link>{xml_escape(PUBLIC_BASE_URL + '/')}</link>"
+        f"<description>{xml_escape(description)}</description>"
+        "<language>de-CH</language>"
+        f"<lastBuildDate>{now}</lastBuildDate>"
+        f"<atom:link href=\"{xml_escape(self_url)}\" rel=\"self\" type=\"application/rss+xml\"/>"
+        + ''.join(items) +
+        "</channel></rss>"
+    )
+    return Response(xml, mimetype='application/rss+xml; charset=utf-8')
+
+
+def _rss_query(args):
+    """Shared filter parsing for the public RSS feeds."""
+    status = (args.get('status') or '').strip()
+    category = (args.get('category') or '').strip()
+    tag = (args.get('tag') or '').strip().lower()
+    q = (args.get('q') or '').strip()
+    try:
+        limit = int(args.get('limit', 50))
+    except Exception:
+        limit = 50
+    limit = max(1, min(200, limit))
+
+    where, params = [], []
+    if status in VALID_STATUSES:
+        where.append('status = ?')
+        params.append(status)
+    if category in CATEGORIES:
+        where.append('category = ?')
+        params.append(category)
+    if q:
+        where.append('(title LIKE ? OR summary LIKE ? OR full_report LIKE ?)')
+        like = f'%{q}%'
+        params.extend([like, like, like])
+
+    sql = 'SELECT * FROM kb_entries'
+    if where:
+        sql += ' WHERE ' + ' AND '.join(where)
+    # Fetch a bit extra so tag filtering can still fill the feed.
+    sql += ' ORDER BY created_at DESC LIMIT ?'
+    params.append(limit if not tag else min(200, limit * 4))
+
+    conn = get_db()
+    rows = conn.execute(sql, params).fetchall()
+    conn.close()
+
+    if tag:
+        rows = [r for r in rows if tag in [str(t).lower() for t in _parse_json_field(dict(r).get('tags'), [])]]
+        rows = rows[:limit]
+    return rows
+
+
+@app.route('/kb/api/rss', methods=['GET'])
+@app.route('/kb/rss.xml', methods=['GET'])
+@app.route('/kb/feed.xml', methods=['GET'])
+def public_rss():
+    """Public RSS feed of KB entries for agents and readers. No token required.
+
+    Optional query params: status, category, tag, q (search), limit (1-200).
+    """
+    rows = _rss_query(request.args)
+    parts = []
+    for key in ('status', 'category', 'tag', 'q'):
+        val = (request.args.get(key) or '').strip()
+        if val:
+            parts.append(f'{key}={val}')
+    suffix = (' · ' + ', '.join(parts)) if parts else ''
+    self_url = f"{PUBLIC_BASE_URL}/api/rss"
+    return build_rss(
+        rows,
+        title='Knowledge Bridge' + suffix,
+        description='KI-Wissensbasis – neueste Eintraege' + suffix,
+        self_url=self_url,
+    )
+
+
 AGENT_DOCS_MD = """# Knowledge Bridge Agent API
 
 Token-geschuetzte HTTPS-API fuer externe Coding-Agenten (z.B. Claude Code),
@@ -1432,6 +1554,27 @@ X-KB-Agent-Token: $KB_AGENT_API_TOKEN
 | POST   | `/entries` | Anlegen, automatisch oder manuell |
 | PATCH  | `/entries/<id>` | Felder aendern (inkl. status, tags, notes) |
 | DELETE | `/entries/<id>` | Eintrag loeschen |
+
+## Oeffentlicher RSS-Feed (ohne Token)
+
+Fuer Agenten und Feed-Reader gibt es einen oeffentlichen RSS-2.0-Feed der
+neuesten Eintraege. **Kein Token noetig.**
+
+```
+https://gu.kuble.com/kb/api/rss      (auch /kb/rss.xml, /kb/feed.xml)
+```
+
+Optionale Query-Parameter (kombinierbar):
+
+- `q` Volltext in title/summary/full_report
+- `status` einer von `backlog`, `working on`, `done`, `ignored`
+- `category` exakte Kategorie aus der erlaubten Liste
+- `tag` exakter Tag (case-insensitive)
+- `limit` 1..200 (Default 50)
+
+```bash
+curl 'https://gu.kuble.com/kb/api/rss?status=backlog&tag=agents&limit=20'
+```
 
 ### GET /entries
 

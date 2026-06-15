@@ -11,6 +11,7 @@ KB is a Kanban-style board for links, topics and research notes. Entries move th
 ## Features
 
 - Kanban board with drag-and-drop status changes
+- Full-text search box over title, summary, category, tags and notes (press `/` to focus)
 - Compact tag filtering with top quick-tags plus an all-tags picker
 - Tag editing and bulk tag operations
 - Date filters and presentation filters
@@ -18,7 +19,8 @@ KB is a Kanban-style board for links, topics and research notes. Entries move th
 - Image search and image attachment helpers
 - Gamma slide generation
 - Agent API under `/kb/api/agent/*` for external coding/research agents
-- Password-protected frontend
+- Public RSS feed at `/kb/api/rss` (aliases `/kb/rss.xml`, `/kb/feed.xml`) for agents and readers, no token
+- Open frontend (password protection removed)
 
 ## Repository hygiene
 
@@ -52,7 +54,8 @@ All secrets and runtime paths should come from environment variables or systemd 
 | Variable | Description | Default |
 |---|---|---|
 | `KB_DB_PATH` | SQLite database path | `/var/www/publish/kb/kb.db` |
-| `KB_PASSWORD` | Frontend password | `changeme` |
+| `KB_PASSWORD` | Deprecated — frontend password protection removed, no longer enforced | `changeme` |
+| `KB_PUBLIC_BASE_URL` | Public base URL used in RSS links | `https://gu.kuble.com/kb` |
 | `GAMMA_API_KEY` | Gamma API key for slide generation | empty |
 | `PERPLEXITY_API_KEY` | Legacy research fallback | empty |
 | `OPENAI_API_KEY` | Grounded research provider, read from env or OpenClaw config | empty |
@@ -103,6 +106,7 @@ python3 -m py_compile api.py
 - `POST /kb/api/entries/<id>/find-images` finds images
 - `POST /kb/api/entries/<id>/generate-slide` starts Gamma slide generation
 - `GET /kb/api/agent/docs` documents the external agent API
+- `GET /kb/api/rss` public RSS feed (aliases `/kb/rss.xml`, `/kb/feed.xml`); supports `q`, `status`, `category`, `tag`, `limit`
 
 ## Stack
 
