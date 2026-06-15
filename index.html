@@ -479,6 +479,29 @@
     .header-summary { font-size: 12px; color: var(--text2); white-space: nowrap; font-weight: 600; }
 
     /* ===== MATRIX ===== */
+    .pres-focus-bar {
+      display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+      padding: 7px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+    .pres-focus-bar:empty { display: none; }
+    .pres-focus-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); white-space: nowrap; flex-shrink: 0; }
+    .focus-pill {
+      padding: 4px 11px; border-radius: 20px;
+      border: 1px solid var(--border2); background: none;
+      color: var(--text2); font-size: 11px; font-weight: 600;
+      cursor: pointer; white-space: nowrap; transition: all 0.15s;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .focus-pill:hover { border-color: var(--accent2); color: var(--text); }
+    .focus-pill.active { background: rgba(92,176,255,0.16); border-color: var(--accent2); color: var(--accent2); }
+    .focus-pill .focus-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border2); }
+    .focus-pill.active .focus-dot { background: var(--accent2); }
+    .focus-pill.all-pill.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+    .focus-count { font-size: 10px; opacity: 0.6; }
+
     .matrix-toolbar {
       display: flex; align-items: center; gap: 14px;
       padding: 8px 16px;
@@ -1237,6 +1260,9 @@
     <button class="btn-date-clear" id="btn-date-clear" onclick="clearDateFilter()">✕ Reset</button>
   </div>
 
+  <!-- Presentation Focus Bar (choose which presentation columns to show) -->
+  <div class="pres-focus-bar" id="pres-focus-bar"></div>
+
   <!-- Matrix toolbar -->
   <div class="matrix-toolbar">
     <label class="matrix-toggle"><input type="checkbox" id="only-unassigned" onchange="onUnassignedToggle(this.checked)" /> Nur ohne Präsentation</label>
@@ -1513,6 +1539,22 @@ let activePresFilter = null; // null = all, 0 = unassigned, >0 = pres id
 let activeTagFilter = null; // null = all, '__untagged' = entries without tags, string = tag
 let searchQuery = ''; // free-text search across title/summary/category/tags/notes
 let matrixUnassignedOnly = false; // matrix: show only bookmarks not in any presentation
+let visiblePresIds = loadVisiblePresIds(); // null = all columns shown; else Set<int> of shown presentation ids
+
+function loadVisiblePresIds() {
+  try {
+    const raw = localStorage.getItem('kb_focus_pres');
+    if (!raw) return null;
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? new Set(arr.map(Number)) : null;
+  } catch(_) { return null; }
+}
+function saveVisiblePresIds() {
+  try {
+    if (visiblePresIds === null) localStorage.removeItem('kb_focus_pres');
+    else localStorage.setItem('kb_focus_pres', JSON.stringify(Array.from(visiblePresIds)));
+  } catch(_) {}
+}
 let activeDateFilter = null; // null = all, 'YYYY-MM' = month
 let selectedCards = new Set(); // bulk selection
 let currentColumnEntries = {'backlog': [], 'working': [], 'done': [], 'ignored': []};
@@ -1826,6 +1868,48 @@ function domainOf(url) {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch(_) { return ''; }
 }
 
+// Presentations whose columns are currently shown in the matrix.
+function getVisiblePresentations() {
+  if (visiblePresIds === null) return presentations;
+  const shown = presentations.filter(p => visiblePresIds.has(p.id));
+  return shown.length ? shown : presentations; // never show zero columns
+}
+
+function renderPresFocusBar() {
+  const bar = document.getElementById('pres-focus-bar');
+  if (!bar) return;
+  if (presentations.length <= 1) { bar.innerHTML = ''; return; } // nothing to focus
+  const allActive = visiblePresIds === null;
+  let html = `<span class="pres-focus-label">🎞 Spalten:</span>`;
+  html += `<button class="focus-pill all-pill ${allActive ? 'active' : ''}" onclick="setAllPresFocus()">Alle</button>`;
+  presentations.forEach(p => {
+    const on = allActive || visiblePresIds.has(p.id);
+    html += `<button class="focus-pill ${on ? 'active' : ''}" onclick="togglePresFocus(${p.id})" title="${esc(p.name)}"><span class="focus-dot"></span>${esc(p.name)}</button>`;
+  });
+  const shownCount = getVisiblePresentations().length;
+  if (!allActive) html += `<span class="focus-count">${shownCount}/${presentations.length} Spalten</span>`;
+  bar.innerHTML = html;
+}
+
+function togglePresFocus(presId) {
+  // Start from "all selected" the first time the user narrows down.
+  if (visiblePresIds === null) visiblePresIds = new Set(presentations.map(p => p.id));
+  if (visiblePresIds.has(presId)) visiblePresIds.delete(presId);
+  else visiblePresIds.add(presId);
+  // If everything is selected again, collapse back to the "all" state.
+  if (visiblePresIds.size >= presentations.length) visiblePresIds = null;
+  saveVisiblePresIds();
+  renderPresFocusBar();
+  applyFiltersAndRender();
+}
+
+function setAllPresFocus() {
+  visiblePresIds = null;
+  saveVisiblePresIds();
+  renderPresFocusBar();
+  applyFiltersAndRender();
+}
+
 function renderMatrix(entries) {
   const wrap = document.getElementById('matrix-wrap');
   if (!wrap) return;
@@ -1841,12 +1925,14 @@ function renderMatrix(entries) {
     return;
   }
 
-  // Count membership per presentation (over the filtered set)
+  const cols = getVisiblePresentations();
+
+  // Count membership per visible presentation (over the filtered set)
   const presCount = {};
-  presentations.forEach(p => presCount[p.id] = 0);
+  cols.forEach(p => presCount[p.id] = 0);
   entries.forEach(e => getPresIds(e).forEach(pid => { if (pid in presCount) presCount[pid]++; }));
 
-  const headCells = presentations.map(p =>
+  const headCells = cols.map(p =>
     `<th class="pres-col" title="${esc(p.name)}"><span class="pres-name">${esc(p.name)}</span><span class="pres-count">${presCount[p.id] || 0}</span></th>`
   ).join('');
 
@@ -1859,7 +1945,7 @@ function renderMatrix(entries) {
     const tags = getTags(e).slice(0, 6);
     const tagHtml = tags.length ? `<span class="bm-tags">${tags.map(t => `<span class="bm-tag">#${esc(t)}</span>`).join('')}</span>` : '';
     const date = new Date(e.created_at).toLocaleDateString('de-CH', {day:'2-digit',month:'2-digit',year:'2-digit'});
-    const cells = presentations.map(p => {
+    const cells = cols.map(p => {
       const on = presIds.includes(p.id);
       return `<td class="cell ${on ? 'on' : ''}" title="${esc(p.name)}" onclick="toggleMembership(${e.id}, ${p.id})"><span class="cell-mark ${on ? 'on' : ''}"></span></td>`;
     }).join('');
@@ -2703,12 +2789,15 @@ function loadPresentations() {
     presentations = data;
     const opts = data.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
     const sel = document.getElementById('gamma-select');
-    const cur = sel.value;
-    sel.innerHTML = '<option value="">Präsentation wählen...</option>' + opts;
-    if (cur) sel.value = cur;
-    document.getElementById('bulk-pres-select').innerHTML =
-      '<option value="">Präsentation...</option>' + opts;
+    if (sel) {
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">Präsentation wählen...</option>' + opts;
+      if (cur) sel.value = cur;
+    }
+    const bulkSel = document.getElementById('bulk-pres-select');
+    if (bulkSel) bulkSel.innerHTML = '<option value="">Präsentation...</option>' + opts;
     renderPresFilterBar();
+    renderPresFocusBar();
     if (allEntries.length) applyFiltersAndRender(); // refresh matrix columns
   });
 }
@@ -2735,7 +2824,7 @@ function createPresentation() {
     if (d.ok) {
       closeNewPresModal();
       loadPresentations();
-      setTimeout(() => document.getElementById('gamma-select').value = d.id, 300);
+      setTimeout(() => { const gs = document.getElementById('gamma-select'); if (gs) gs.value = d.id; }, 300);
       showToast(`«${name}» gespeichert`);
     }
   });
